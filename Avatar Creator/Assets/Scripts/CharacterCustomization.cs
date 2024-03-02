@@ -4,7 +4,11 @@ using TMPro;
 
 public class CharacterCustomization : MonoBehaviour
 {
-    public Image characterImage; // Reference to the Image component displaying the character
+    public Image bodyImage; // Reference to the Image component displaying the character's body
+    public Image hairImage; // Reference to the Image component displaying the character's hair
+    
+    // Add more Image references for other body parts as needed
+
     public string bodyPartsFolderPath = "BodyParts/";
     public Transform categoryMenuPanel; // Reference to the panel where category menu buttons will be added
     public Transform bodyPartPanel; // Reference to the panel where body part buttons will be added
@@ -48,13 +52,27 @@ public class CharacterCustomization : MonoBehaviour
             // Display the sprite name in the body part button's text component
             bodyPartButton.GetComponentInChildren<TextMeshProUGUI>().text = bodyPart.name;
 
-            bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(bodyPart));
+            bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(categoryName, bodyPart));
         }
     }
 
-    void OnBodyPartButtonClicked(Sprite selectedBodyPart)
+    void OnBodyPartButtonClicked(string categoryName, Sprite selectedBodyPart)
     {
-        // Update character image with the selected body part
-        characterImage.sprite = selectedBodyPart;
+
+        string categoryLowered = categoryName.ToLower();
+
+        // Update the corresponding Image component with the selected body part
+        // You can customize this logic based on your naming conventions
+        switch (categoryLowered)
+        {
+            case "body":
+                bodyImage.sprite = selectedBodyPart;
+                break;
+            case "hair back":
+                hairImage.sprite = selectedBodyPart;
+                break;
+         
+                // Add more cases for other body parts as needed
+        }
     }
 }

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
 
 public class CharacterScreenshot : MonoBehaviour
 {
@@ -11,35 +12,35 @@ public class CharacterScreenshot : MonoBehaviour
 
     public void TakeScreenshot()
     {
-        // Create a RenderTexture to render the character
-        RenderTexture renderTexture = new RenderTexture((int)characterBounds.rect.width, (int)characterBounds.rect.height, 24);
-        characterCamera.targetTexture = renderTexture;
+        // Capture the screenshot as a texture
+        Texture2D texture = ScreenCapture.CaptureScreenshotAsTexture();
 
-        // Render the character
-        characterCamera.Render();
+        // Check if the screenshot texture is not null
+        if (texture != null)
+        {
+            // Convert the texture to a PNG byte array
+            byte[] bytes = texture.EncodeToPNG();
 
-        // Create a texture to hold the rendered image
-        Texture2D texture = new Texture2D((int)characterBounds.rect.width, (int)characterBounds.rect.height, TextureFormat.RGB24, false);
+            // Specify the directory where the screenshot will be saved
+            string directoryPath = Application.persistentDataPath + "/Screenshots";
+            Directory.CreateDirectory(directoryPath); // Create the directory if it doesn't exist
 
-        // Read the pixels from the RenderTexture and apply them to the texture
-        RenderTexture.active = renderTexture;
-        texture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-        texture.Apply();
+            // Construct the file path for the screenshot
+            string filePath = Path.Combine(directoryPath, "CharacterScreenshot.png");
 
-        // Reset the active RenderTexture and camera target texture
-        RenderTexture.active = null;
-        characterCamera.targetTexture = null;
+            // Write the PNG byte array to the file
+            File.WriteAllBytes(filePath, bytes);
 
-        // Encode the texture as a PNG
-        byte[] bytes = texture.EncodeToPNG();
+            // Log the path where the screenshot was saved
+            Debug.Log("Screenshot saved to: " + filePath);
 
-        // Save the screenshot as a file
-        string fileName = "CharacterScreenshot.png";
-        System.IO.File.WriteAllBytes(Application.persistentDataPath + "/" + fileName, bytes);
-
-        // Destroy temporary objects
-        Destroy(renderTexture);
-        Destroy(texture);
+            // Destroy the temporary texture
+            Destroy(texture);
+        }
+        else
+        {
+            Debug.LogError("Failed to capture screenshot.");
+        }
     }
 
     void Start()

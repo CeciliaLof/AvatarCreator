@@ -6,7 +6,8 @@ public class CharacterCustomization : MonoBehaviour
 {
     public Image bodyImage; // Reference to the Image component displaying the character's body
     public Image hairImage; // Reference to the Image component displaying the character's hair
-    
+    public Image hairFrontImage; // Reference to the Image component displaying the character's hair
+    public Image eyesImage;
     // Add more Image references for other body parts as needed
 
     public string bodyPartsFolderPath = "BodyParts/";
@@ -50,7 +51,7 @@ public class CharacterCustomization : MonoBehaviour
             bodyPartButton.GetComponent<Image>().sprite = bodyPart;
 
             // Display the sprite name in the body part button's text component
-            bodyPartButton.GetComponentInChildren<TextMeshProUGUI>().text = bodyPart.name;
+            //bodyPartButton.GetComponentInChildren<TextMeshProUGUI>().text = bodyPart.name;
 
             bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(categoryName, bodyPart));
         }
@@ -71,7 +72,13 @@ public class CharacterCustomization : MonoBehaviour
             case "hair back":
                 hairImage.sprite = selectedBodyPart;
                 break;
-         
+            case "hair front":
+                hairFrontImage.sprite = selectedBodyPart;
+                break;
+            case "eyes":
+                eyesImage.sprite = selectedBodyPart;
+                break;
+
                 // Add more cases for other body parts as needed
         }
     }

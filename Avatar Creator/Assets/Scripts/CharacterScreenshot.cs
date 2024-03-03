@@ -1,8 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using System.IO;
 
 public class CharacterScreenshot : MonoBehaviour
@@ -38,27 +39,17 @@ public class CharacterScreenshot : MonoBehaviour
         // Convert the Texture2D to a PNG byte array
         byte[] bytes = screenshotTexture.EncodeToPNG();
 
-#if UNITY_EDITOR
-        // Prompt the user to select a location to save the screenshot in the Unity Editor
-        string filePath = UnityEditor.EditorUtility.SaveFilePanel("Save Screenshot", "", "Screenshot.png", "png");
-#else
-        // Specify a default file path to save the screenshot in builds
-        string filePath = Path.Combine(Application.persistentDataPath, "Screenshot.png");
-#endif
+        // Save the screenshot to the desktop
+        string fileName = "CharacterScreenshot_" + DateTime.Now.ToString("yyyyMMdd") + ".png";
+        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), fileName);
+        File.WriteAllBytes(filePath, bytes);
+        Debug.Log("Screenshot saved to: " + filePath);
 
-        // Check if a file path is selected
-        if (!string.IsNullOrEmpty(filePath))
+        // Show the screenshot saved popup
+        if (screenshotSavedPopup != null)
         {
-            // Save the screenshot to the selected file path
-            File.WriteAllBytes(filePath, bytes);
-            Debug.Log("Screenshot saved to: " + filePath);
-
-            // Show the screenshot saved popup
-            if (screenshotSavedPopup != null)
-            {
-                screenshotSavedPopup.gameObject.SetActive(true);
-                StartCoroutine(FadeOutPopup());
-            }
+            screenshotSavedPopup.gameObject.SetActive(true);
+            StartCoroutine(FadeOutPopup());
         }
 
         // Re-enable the character camera

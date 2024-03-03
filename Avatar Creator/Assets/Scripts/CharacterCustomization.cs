@@ -8,6 +8,7 @@ public class CharacterCustomization : MonoBehaviour
     public Image hairImage; // Reference to the Image component displaying the character's hair
     public Image hairFrontImage; // Reference to the Image component displaying the character's hair
     public Image eyesImage;
+    public Image backgroundImage;
     // Add more Image references for other body parts as needed
 
     public string bodyPartsFolderPath = "BodyParts/";
@@ -59,7 +60,6 @@ public class CharacterCustomization : MonoBehaviour
 
     void OnBodyPartButtonClicked(string categoryName, Sprite selectedBodyPart)
     {
-
         string categoryLowered = categoryName.ToLower();
 
         // Update the corresponding Image component with the selected body part
@@ -78,8 +78,36 @@ public class CharacterCustomization : MonoBehaviour
             case "eyes":
                 eyesImage.sprite = selectedBodyPart;
                 break;
-
+            case "background":
+                backgroundImage.sprite = selectedBodyPart;
+                break;
                 // Add more cases for other body parts as needed
+        }
+    }
+
+    public void RandomizeCharacter()
+    {
+        // Randomize each category separately
+        RandomizeCategory("body");
+        RandomizeCategory("hair back");
+        RandomizeCategory("hair front");
+        RandomizeCategory("eyes");
+        RandomizeCategory("background");
+        // Add more categories as needed
+    }
+
+    private void RandomizeCategory(string categoryName)
+    {
+        string folderPath = bodyPartsFolderPath + categoryName + "/";
+        Sprite[] bodyParts = Resources.LoadAll<Sprite>(folderPath);
+
+        if (bodyParts.Length > 0)
+        {
+            // Select a random body part from the category
+            Sprite randomBodyPart = bodyParts[Random.Range(0, bodyParts.Length)];
+
+            // Update the corresponding Image component with the selected random body part
+            OnBodyPartButtonClicked(categoryName, randomBodyPart);
         }
     }
 }

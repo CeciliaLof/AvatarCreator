@@ -2,11 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using System.IO;
 
 public class CharacterScreenshot : MonoBehaviour
 {
     public Camera characterCamera; // Reference to the character camera
-    public string screenshotPath = "Screenshots/"; // Folder path to save screenshots
     public TextMeshProUGUI screenshotSavedPopup; // Reference to the screenshot saved popup
     public float popupFadeDuration = 1f; // Duration in seconds for the popup to fade away
 
@@ -37,20 +38,28 @@ public class CharacterScreenshot : MonoBehaviour
         // Convert the Texture2D to a PNG byte array
         byte[] bytes = screenshotTexture.EncodeToPNG();
 
-        // Save the screenshot to a file
-        string fileName = "CharacterScreenshot_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".png";
-        string filePath = System.IO.Path.Combine(Application.dataPath, screenshotPath + fileName);
-        System.IO.File.WriteAllBytes(filePath, bytes);
+#if UNITY_EDITOR
+        // Prompt the user to select a location to save the screenshot in the Unity Editor
+        string filePath = UnityEditor.EditorUtility.SaveFilePanel("Save Screenshot", "", "Screenshot.png", "png");
+#else
+        // Specify a default file path to save the screenshot in builds
+        string filePath = Path.Combine(Application.persistentDataPath, "Screenshot.png");
+#endif
 
-        Debug.Log("Screenshot saved to: " + filePath);
-
-        // Show the screenshot saved popup
-        if (screenshotSavedPopup != null)
+        // Check if a file path is selected
+        if (!string.IsNullOrEmpty(filePath))
         {
-            screenshotSavedPopup.gameObject.SetActive(true);
-            StartCoroutine(FadeOutPopup());
-        }
+            // Save the screenshot to the selected file path
+            File.WriteAllBytes(filePath, bytes);
+            Debug.Log("Screenshot saved to: " + filePath);
 
+            // Show the screenshot saved popup
+            if (screenshotSavedPopup != null)
+            {
+                screenshotSavedPopup.gameObject.SetActive(true);
+                StartCoroutine(FadeOutPopup());
+            }
+        }
 
         // Re-enable the character camera
         characterCamera.enabled = characterCameraEnabled;

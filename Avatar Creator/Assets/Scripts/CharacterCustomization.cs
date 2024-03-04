@@ -1,6 +1,13 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 using TMPro;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine.ResourceManagement.ResourceLocations;
+
 
 public class CharacterCustomization : MonoBehaviour
 {
@@ -11,27 +18,54 @@ public class CharacterCustomization : MonoBehaviour
     public Image backgroundImage;
     // Add more Image references for other body parts as needed
 
-    public string bodyPartsFolderPath = "BodyParts/";
     public Transform categoryMenuPanel; // Reference to the panel where category menu buttons will be added
     public Transform bodyPartPanel; // Reference to the panel where body part buttons will be added
     public GameObject categoryButtonPrefab; // Prefab for the category button
     public GameObject bodyPartButtonPrefab; // Prefab for the body part button
 
+    private Dictionary<string, List<Sprite>> loadedBodyParts = new Dictionary<string, List<Sprite>>();
+
     void Start()
     {
         // Load all category folders from the specified path
-        string[] categories = System.IO.Directory.GetDirectories(Application.dataPath + "/Resources/" + bodyPartsFolderPath);
+        LoadCategories();
+    }
 
-        // Create category buttons in the menu panel
-        foreach (string categoryPath in categories)
+    private void LoadCategories()
+    {
+        Addressables.LoadResourceLocationsAsync("BodyParts", typeof(Sprite)).Completed += OnLocationsLoaded;
+    }
+
+    private void OnLocationsLoaded(AsyncOperationHandle<IList<IResourceLocation>> op)
+    {
+        if (op.Status == AsyncOperationStatus.Succeeded)
         {
-            string categoryName = System.IO.Path.GetFileName(categoryPath);
+            foreach (var location in op.Result)
+            {
+                var categoryName = location.InternalId;
 
-            GameObject categoryButton = Instantiate(categoryButtonPrefab, categoryMenuPanel);
-            categoryButton.GetComponentInChildren<TextMeshProUGUI>().text = categoryName;
-            categoryButton.GetComponent<Button>().onClick.AddListener(() => OnCategoryButtonClicked(categoryName));
+                // Create category button in the menu panel
+                GameObject categoryButton = Instantiate(categoryButtonPrefab, categoryMenuPanel);
+                categoryButton.GetComponentInChildren<TextMeshProUGUI>().text = categoryName;
+                categoryButton.GetComponent<Button>().onClick.AddListener(() => OnCategoryButtonClicked(categoryName));
+
+                // Load body parts for the category
+                var loadOperation = Addressables.LoadAssetsAsync<Sprite>(location, null);
+                loadOperation.Completed += handle =>
+                {
+                    if (loadOperation.Result != null && loadOperation.Result.Count > 0)
+                    {
+                        loadedBodyParts[categoryName] = new List<Sprite>(loadOperation.Result);
+                    }
+                };
+            }
+        }
+        else
+        {
+            Debug.LogError("Failed to load resource locations for BodyParts.");
         }
     }
+
 
     void OnCategoryButtonClicked(string categoryName)
     {
@@ -41,30 +75,24 @@ public class CharacterCustomization : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        // Load all body part sprites from the selected category folder
-        string folderPath = bodyPartsFolderPath + categoryName + "/";
-        Sprite[] bodyParts = Resources.LoadAll<Sprite>(folderPath);
-
-        // Create body part buttons in the body part panel
-        foreach (Sprite bodyPart in bodyParts)
+        if (loadedBodyParts.ContainsKey(categoryName))
         {
-            GameObject bodyPartButton = Instantiate(bodyPartButtonPrefab, bodyPartPanel);
-            bodyPartButton.GetComponent<Image>().sprite = bodyPart;
+            var bodyParts = loadedBodyParts[categoryName];
 
-            // Display the sprite name in the body part button's text component
-            //bodyPartButton.GetComponentInChildren<TextMeshProUGUI>().text = bodyPart.name;
-
-            bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(categoryName, bodyPart));
+            // Create body part buttons in the body part panel
+            foreach (Sprite bodyPart in bodyParts)
+            {
+                GameObject bodyPartButton = Instantiate(bodyPartButtonPrefab, bodyPartPanel);
+                bodyPartButton.GetComponent<Image>().sprite = bodyPart;
+                bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(categoryName, bodyPart));
+            }
         }
     }
 
     void OnBodyPartButtonClicked(string categoryName, Sprite selectedBodyPart)
     {
-        string categoryLowered = categoryName.ToLower();
-
         // Update the corresponding Image component with the selected body part
-        // You can customize this logic based on your naming conventions
-        switch (categoryLowered)
+        switch (categoryName.ToLower())
         {
             case "body":
                 bodyImage.sprite = selectedBodyPart;
@@ -98,16 +126,18 @@ public class CharacterCustomization : MonoBehaviour
 
     private void RandomizeCategory(string categoryName)
     {
-        string folderPath = bodyPartsFolderPath + categoryName + "/";
-        Sprite[] bodyParts = Resources.LoadAll<Sprite>(folderPath);
-
-        if (bodyParts.Length > 0)
+        if (loadedBodyParts.ContainsKey(categoryName))
         {
-            // Select a random body part from the category
-            Sprite randomBodyPart = bodyParts[Random.Range(0, bodyParts.Length)];
+            var bodyParts = loadedBodyParts[categoryName];
 
-            // Update the corresponding Image component with the selected random body part
-            OnBodyPartButtonClicked(categoryName, randomBodyPart);
+            if (bodyParts.Count > 0)
+            {
+                // Select a random body part from the category
+                Sprite randomBodyPart = bodyParts[UnityEngine.Random.Range(0, bodyParts.Count)];
+
+                // Update the corresponding Image component with the selected random body part
+                OnBodyPartButtonClicked(categoryName, randomBodyPart);
+            }
         }
     }
 }

@@ -1,71 +1,37 @@
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 using TMPro;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using UnityEngine.ResourceManagement.ResourceLocations;
-
+using System.IO;
 
 public class CharacterCustomization : MonoBehaviour
 {
-    public Image bodyImage; // Reference to the Image component displaying the character's body
-    public Image hairImage; // Reference to the Image component displaying the character's hair
-    public Image hairFrontImage; // Reference to the Image component displaying the character's hair
+    public Image bodyImage;
+    public Image hairBackImage;
+    public Image hairFrontImage;
     public Image eyesImage;
     public Image backgroundImage;
-    // Add more Image references for other body parts as needed
 
-    public Transform categoryMenuPanel; // Reference to the panel where category menu buttons will be added
-    public Transform bodyPartPanel; // Reference to the panel where body part buttons will be added
-    public GameObject categoryButtonPrefab; // Prefab for the category button
-    public GameObject bodyPartButtonPrefab; // Prefab for the body part button
-
-    private Dictionary<string, List<Sprite>> loadedBodyParts = new Dictionary<string, List<Sprite>>();
+    public Transform categoryMenuPanel;
+    public Transform bodyPartPanel;
+    public GameObject categoryButtonPrefab;
+    public GameObject bodyPartButtonPrefab;
 
     void Start()
     {
-        // Load all category folders from the specified path
-        LoadCategories();
-    }
+        // Load all subfolders (categories) under the StreamingAssets folder
+        string[] categoryFolders = Directory.GetDirectories(Application.streamingAssetsPath);
 
-    private void LoadCategories()
-    {
-        Addressables.LoadResourceLocationsAsync("BodyParts", typeof(Sprite)).Completed += OnLocationsLoaded;
-    }
-
-    private void OnLocationsLoaded(AsyncOperationHandle<IList<IResourceLocation>> op)
-    {
-        if (op.Status == AsyncOperationStatus.Succeeded)
+        // Create category buttons in the menu panel
+        foreach (string categoryFolder in categoryFolders)
         {
-            foreach (var location in op.Result)
-            {
-                var categoryName = location.InternalId;
+            string categoryName = Path.GetFileName(categoryFolder);
 
-                // Create category button in the menu panel
-                GameObject categoryButton = Instantiate(categoryButtonPrefab, categoryMenuPanel);
-                categoryButton.GetComponentInChildren<TextMeshProUGUI>().text = categoryName;
-                categoryButton.GetComponent<Button>().onClick.AddListener(() => OnCategoryButtonClicked(categoryName));
-
-                // Load body parts for the category
-                var loadOperation = Addressables.LoadAssetsAsync<Sprite>(location, null);
-                loadOperation.Completed += handle =>
-                {
-                    if (loadOperation.Result != null && loadOperation.Result.Count > 0)
-                    {
-                        loadedBodyParts[categoryName] = new List<Sprite>(loadOperation.Result);
-                    }
-                };
-            }
-        }
-        else
-        {
-            Debug.LogError("Failed to load resource locations for BodyParts.");
+            // Create category button
+            GameObject categoryButton = Instantiate(categoryButtonPrefab, categoryMenuPanel);
+            categoryButton.GetComponentInChildren<TextMeshProUGUI>().text = categoryName;
+            categoryButton.GetComponent<Button>().onClick.AddListener(() => OnCategoryButtonClicked(categoryName));
         }
     }
-
 
     void OnCategoryButtonClicked(string categoryName)
     {
@@ -75,17 +41,25 @@ public class CharacterCustomization : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        if (loadedBodyParts.ContainsKey(categoryName))
-        {
-            var bodyParts = loadedBodyParts[categoryName];
+        // Load all body part sprites from the selected category folder
+        string folderPath = Path.Combine(Application.streamingAssetsPath, categoryName);
+        string[] bodyPartPaths = Directory.GetFiles(folderPath, "*.png");
 
-            // Create body part buttons in the body part panel
-            foreach (Sprite bodyPart in bodyParts)
-            {
-                GameObject bodyPartButton = Instantiate(bodyPartButtonPrefab, bodyPartPanel);
-                bodyPartButton.GetComponent<Image>().sprite = bodyPart;
-                bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(categoryName, bodyPart));
-            }
+        // Create body part buttons in the body part panel
+        foreach (string bodyPartPath in bodyPartPaths)
+        {
+            // Load body part sprite
+            byte[] fileData = File.ReadAllBytes(bodyPartPath);
+            Texture2D texture = new Texture2D(2, 2);
+            texture.LoadImage(fileData);
+            Sprite bodyPartSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
+
+            // Create body part button
+            GameObject bodyPartButton = Instantiate(bodyPartButtonPrefab, bodyPartPanel);
+            bodyPartButton.GetComponent<Image>().sprite = bodyPartSprite;
+
+            // Add click listener to body part button
+            bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(categoryName, bodyPartSprite));
         }
     }
 
@@ -98,7 +72,7 @@ public class CharacterCustomization : MonoBehaviour
                 bodyImage.sprite = selectedBodyPart;
                 break;
             case "hair back":
-                hairImage.sprite = selectedBodyPart;
+                hairBackImage.sprite = selectedBodyPart;
                 break;
             case "hair front":
                 hairFrontImage.sprite = selectedBodyPart;
@@ -126,18 +100,23 @@ public class CharacterCustomization : MonoBehaviour
 
     private void RandomizeCategory(string categoryName)
     {
-        if (loadedBodyParts.ContainsKey(categoryName))
+        // Load all body part sprites from the selected category folder
+        string folderPath = Path.Combine(Application.streamingAssetsPath, categoryName);
+        string[] bodyPartPaths = Directory.GetFiles(folderPath, "*.png");
+
+        if (bodyPartPaths.Length > 0)
         {
-            var bodyParts = loadedBodyParts[categoryName];
+            // Select a random body part from the category
+            string randomBodyPartPath = bodyPartPaths[Random.Range(0, bodyPartPaths.Length)];
 
-            if (bodyParts.Count > 0)
-            {
-                // Select a random body part from the category
-                Sprite randomBodyPart = bodyParts[UnityEngine.Random.Range(0, bodyParts.Count)];
+            // Load body part sprite
+            byte[] fileData = File.ReadAllBytes(randomBodyPartPath);
+            Texture2D texture = new Texture2D(2, 2);
+            texture.LoadImage(fileData);
+            Sprite randomBodyPartSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
 
-                // Update the corresponding Image component with the selected random body part
-                OnBodyPartButtonClicked(categoryName, randomBodyPart);
-            }
+            // Update the corresponding Image component with the selected random body part
+            OnBodyPartButtonClicked(categoryName, randomBodyPartSprite);
         }
     }
 }

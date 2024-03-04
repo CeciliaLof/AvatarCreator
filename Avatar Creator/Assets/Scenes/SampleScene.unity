@@ -1176,11 +1176,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bodyImage: {fileID: 493212742}
-  hairImage: {fileID: 1336878259}
+  hairBackImage: {fileID: 1336878259}
   hairFrontImage: {fileID: 901057650}
   eyesImage: {fileID: 1766819439}
   backgroundImage: {fileID: 1647504889}
-  bodyPartsFolderPath: BodyParts/
   categoryMenuPanel: {fileID: 619143473}
   bodyPartPanel: {fileID: 229893668}
   categoryButtonPrefab: {fileID: 8882738492930961324, guid: 42fc58cb6a534eb4497beba43b63e0b0, type: 3}
@@ -1375,7 +1374,7 @@ GameObject:
   - component: {fileID: 1336878260}
   - component: {fileID: 1336878259}
   m_Layer: 5
-  m_Name: hairImage
+  m_Name: hairBackImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

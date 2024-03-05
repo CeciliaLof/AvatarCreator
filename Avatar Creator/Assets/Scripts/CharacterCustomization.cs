@@ -16,10 +16,15 @@ public class CharacterCustomization : MonoBehaviour
     public GameObject categoryButtonPrefab;
     public GameObject bodyPartButtonPrefab;
 
+    public string[] artStyleFolders;
+
     void Start()
     {
-        // Load all subfolders (categories) under the StreamingAssets folder
-        string[] categoryFolders = Directory.GetDirectories(Application.streamingAssetsPath);
+        // Load sprites based on the default art style (first in the array)
+        LoadSpritesForArtStyle(artStyleFolders[0]);
+
+        // Load all subfolders (categories) under the first art style folder
+        string[] categoryFolders = Directory.GetDirectories(Path.Combine(Application.streamingAssetsPath, artStyleFolders[0]));
 
         // Create category buttons in the menu panel
         foreach (string categoryFolder in categoryFolders)
@@ -31,6 +36,19 @@ public class CharacterCustomization : MonoBehaviour
             categoryButton.GetComponentInChildren<TextMeshProUGUI>().text = categoryName;
             categoryButton.GetComponent<Button>().onClick.AddListener(() => OnCategoryButtonClicked(categoryName));
         }
+
+        RandomizeCharacter();
+    }
+
+    public void LoadSpritesForArtStyle(string artStyle)
+    {
+        // Load sprites for the selected art style
+        string artStyleFolderPath = Path.Combine(Application.streamingAssetsPath, artStyle);
+        bodyImage.sprite = Resources.Load<Sprite>(Path.Combine(artStyleFolderPath, "Body"));
+        hairBackImage.sprite = Resources.Load<Sprite>(Path.Combine(artStyleFolderPath, "Hair Back"));
+        hairFrontImage.sprite = Resources.Load<Sprite>(Path.Combine(artStyleFolderPath, "Hair Front"));
+        eyesImage.sprite = Resources.Load<Sprite>(Path.Combine(artStyleFolderPath, "Eyes"));
+        backgroundImage.sprite = Resources.Load<Sprite>(Path.Combine(artStyleFolderPath, "Background"));
     }
 
     void OnCategoryButtonClicked(string categoryName)
@@ -42,7 +60,7 @@ public class CharacterCustomization : MonoBehaviour
         }
 
         // Load all body part sprites from the selected category folder
-        string folderPath = Path.Combine(Application.streamingAssetsPath, categoryName);
+        string folderPath = Path.Combine(Application.streamingAssetsPath, artStyleFolders[0], categoryName);
         string[] bodyPartPaths = Directory.GetFiles(folderPath, "*.png");
 
         // Create body part buttons in the body part panel
@@ -62,7 +80,6 @@ public class CharacterCustomization : MonoBehaviour
             bodyPartButton.GetComponent<Button>().onClick.AddListener(() => OnBodyPartButtonClicked(categoryName, bodyPartSprite));
         }
     }
-
     void OnBodyPartButtonClicked(string categoryName, Sprite selectedBodyPart)
     {
         // Update the corresponding Image component with the selected body part
@@ -101,7 +118,7 @@ public class CharacterCustomization : MonoBehaviour
     private void RandomizeCategory(string categoryName)
     {
         // Load all body part sprites from the selected category folder
-        string folderPath = Path.Combine(Application.streamingAssetsPath, categoryName);
+        string folderPath = Path.Combine(Application.streamingAssetsPath, artStyleFolders[0], categoryName);
         string[] bodyPartPaths = Directory.GetFiles(folderPath, "*.png");
 
         if (bodyPartPaths.Length > 0)
